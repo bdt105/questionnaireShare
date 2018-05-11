@@ -1,9 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Input, Output, EventEmitter } from '@angular/core';
 import { GenericComponent } from '@sharedComponents/generic.component';
 import { Router } from '@angular/router';
-
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service';
 
 import { QuestionnaireService } from '@appSharedServices/questionnaire.service';
 import { MiscellaneousService } from '@sharedServices/miscellaneous.service';
@@ -14,7 +11,6 @@ export class QuestionnaireComponent extends GenericComponent {
 
     public __questionnaire: any;
     private __id: any;
-    private __searchTerm: string;
 
     public showSearch = false;
 
@@ -46,14 +42,6 @@ export class QuestionnaireComponent extends GenericComponent {
         super(miscellaneousService);
     }
 
-    private getFileName(){
-        if (this.__questionnaire){
-            return this.__questionnaire.id + ".json";
-        }else{
-            return null;
-        }
-    }
-
     ngOnInit(){
     }
 
@@ -71,7 +59,6 @@ export class QuestionnaireComponent extends GenericComponent {
     }
 
     load(id: string){
-        let fileName = id + ".json";
         this.questionnaireService.loadQuestionnaire(
             (data: any) => this.successLoad(data), 
             (error: any) => this.failureLoad(error), id);

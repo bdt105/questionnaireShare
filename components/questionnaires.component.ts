@@ -1,7 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { GenericComponent } from '@sharedComponents/generic.component';
 
-import { Toolbox } from 'bdt105toolbox/dist';
 import { QuestionnaireService } from '@appSharedServices/questionnaire.service';
 import { MiscellaneousService } from '@sharedServices/miscellaneous.service';
 import { Router } from '@angular/router';
