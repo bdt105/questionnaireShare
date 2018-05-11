@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Input, Output, EventEmitter } from '@angular/core';
 import { GenericComponent } from '@sharedComponents/generic.component';
 
 import { QuestionnaireService } from '@appSharedServices/questionnaire.service';

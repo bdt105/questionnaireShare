@@ -8,7 +8,6 @@ import { MiscellaneousService } from '@sharedServices/miscellaneous.service';
 export class QuestionnaireService {
 
     private toolbox: Toolbox = new Toolbox(); 
-    private error: any;
 
     private data: any;
 
@@ -134,7 +133,6 @@ export class QuestionnaireService {
             "edit": true,
             "showAnswers": true
         };
-        let a = this.newAnswer(q);
         if (questionnaire){
             if (!questionnaire.questions){
                 questionnaire.questions = [];
@@ -211,7 +209,6 @@ export class QuestionnaireService {
     }
 
     cleanQuestionnaire(questionnaire: any){
-        let x = 0;
         delete(questionnaire.edit);
         delete(questionnaire.questionsToImport);
         delete(questionnaire.showAnswers);
@@ -222,9 +219,6 @@ export class QuestionnaireService {
                 delete(questionnaire.questions[j].edit);
                 delete(questionnaire.questions[j].showAnswers);
                 if (questionnaire.questions[j].answers){
-                    if (questionnaire.questions[j].answers.length > 1){
-                        x ++;
-                    }
                     for (var k = 0; k < questionnaire.questions[j].answers.length; k++){
                         if (questionnaire.questions[j].answers[k].answer == ""){
                             questionnaire.questions[j].answers.splice(k, 1);
