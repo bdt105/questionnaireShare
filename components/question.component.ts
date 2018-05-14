@@ -12,52 +12,76 @@ export class QuestionComponent extends GenericComponent {
     @Input() questionnaire: any;
     @Input() editable: boolean = true;
     @Input() showAnswers: boolean = false;
-    @Output() change: EventEmitter<string> = new EventEmitter<string>();
+    @Input() showLabel: boolean = true;
+    @Output() changed: EventEmitter<string> = new EventEmitter<string>();
+    @Output() saved: EventEmitter<string> = new EventEmitter<string>();
 
-    constructor(public questionnaireService: QuestionnaireService, public miscellaneousService: MiscellaneousService){
+    constructor(public questionnaireService: QuestionnaireService, public miscellaneousService: MiscellaneousService) {
         super(miscellaneousService);
     }
 
-    ngOnInit(){
+    ngOnInit() {
     }
 
-    canEdit(){
+    canEdit() {
         return this.question.edit && this.editable;
     }
 
-    toggleEdit(){
+    toggleEdit() {
         this.question.edit = !this.question.edit;
         this.question.showAnswers = this.question.edit;
     }
 
-    newAnswer(question: any){
-        this.question.showAnswers = true;      
-        this.question.edit = true;      
-        this.questionnaireService.newAnswer(question);  
+    toggleAnswers() {
+        this.question.showAnswers = !this.question.showAnswers
     }
 
-    deleteAnswer(question: any, answer: any){
-        this.questionnaireService.deleteAnswer(question, answer);
-        this.changed();
+    toggleEditAnswer(answer: any) {
+        answer.edit = !answer.edit;
     }
 
-    deleteQuestion(questionnaire: any, question: any){
-        this.questionnaireService.deleteQuestion(questionnaire, question);
-        this.changed();        
+    newAnswer() {
+        this.question.showAnswers = true;
+        this.question.edit = true;
+        this.questionnaireService.newAnswer(this.question);
     }
 
-    changed(){
-        this.change.emit(this.question);
+    deleteAnswer(answer: any) {
+        this.questionnaireService.deleteAnswer(this.question, answer);
+        this.change();
     }
 
-    newQuestion(questionnaire: any, insertAfterQuestion: any = null){
-        this.questionnaireService.newQuestion(questionnaire, insertAfterQuestion);
-    }    
+    delete() {
+        this.questionnaireService.deleteQuestion(this.questionnaire, this.question);
+        this.change();
+    }
 
-    setFavorite(question: any, favorite: boolean){
-        if (question){
-            question.favorite = favorite;
-            this.change.emit(this.question);
+    private change() {
+        let successCallback = () => {
+            this.saved.emit(this.question);
         }
+        let failureCallback = () => {
+            // this.changed.emit(this.question);
+        }
+        this.questionnaireService.saveQuestionnaire(successCallback, failureCallback, this.questionnaire);
+        this.changed.emit(this.question);
+    }
+
+    newQuestion(insertAfterQuestionIndex: any = null) {
+        this.questionnaireService.newQuestion(this.questionnaire, insertAfterQuestionIndex);
+    }
+
+    newQuestionAfterQuestion(question: any) {
+        this.questionnaireService.newQuestionAfterQuestion(this.questionnaire, question);
+    }
+
+    setFavorite(favorite: boolean) {
+        this.question.favorite = favorite;
+        this.change();
+    }
+
+    toggleFavorite() {
+        this.question.favorite = !this.question.favorite;
+        this.change();
     }
 }

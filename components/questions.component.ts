@@ -7,9 +7,9 @@ import { MiscellaneousService } from '@sharedServices/miscellaneous.service';
 export class QuestionsComponent extends GenericComponent {
 
     public showResults = false;
-    private __favoriteOnly: boolean = false;
-    private __questions: any;
-    private __questionsFiltered: any;
+    protected __favoriteOnly: boolean = false;
+    protected __questions: any;
+    protected __questionsFiltered: any;
 
     @Input() set favoriteOnly(value: boolean){
         this.__favoriteOnly = value;
