@@ -411,13 +411,13 @@ export class QuestionnaireService {
         return score;
     }
 
-    generateQuestions(data: any, randomQuestions: boolean, jeopardy: boolean, nbQuestion: number, favoriteQuestionsOnly: boolean) {
+    generateQuestions(questionnaires: any, randomQuestions: boolean, jeopardy: boolean, nbQuestion: number, favoriteQuestionsOnly: boolean) {
         let questions = [];
-        for (var i = 0; i < data.length; i++) {
-            if (data[i].test) {
-                for (var j = 0; j < data[i].questions.length; j++) {
-                    let q = this.toolbox.cloneObject(data[i].questions[j]);
-                    q.questionnaireTitle = data[i].title;
+        for (var i = 0; i < questionnaires.length; i++) {
+            if (questionnaires[i].test) {
+                for (var j = 0; j < questionnaires[i].questions.length; j++) {
+                    let q = this.toolbox.cloneObject(questionnaires[i].questions[j]);
+                    q.questionnaireTitle = questionnaires[i].title;
                     questions.push(q);
                 }
             }

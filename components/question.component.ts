@@ -13,6 +13,7 @@ export class QuestionComponent extends GenericComponent {
     @Input() editable: boolean = true;
     @Input() showAnswers: boolean = false;
     @Input() showLabel: boolean = true;
+    @Input() showCustomAnswer: boolean = false;
     @Output() changed: EventEmitter<string> = new EventEmitter<string>();
     @Output() saved: EventEmitter<string> = new EventEmitter<string>();
 
