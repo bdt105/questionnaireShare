@@ -19,9 +19,13 @@ export class QuestionnairesComponent extends GenericComponent {
     public questionnairesToExport: string;
 
     public __filterType: string;
-    public showDisabled: boolean;
+    public __showDisabled: boolean;
 
     public sortKey: string ="title";
+
+    public lastError: string;
+
+    public loading = false;
 
     private __searchTerm: string;
 
@@ -35,11 +39,18 @@ export class QuestionnairesComponent extends GenericComponent {
 
     @Input() set filterType(value: string){
         this.__filterType = value;
-        this.load();
     }
 
     get filterType(): string{
         return this.__filterType;
+    }
+
+    @Input() set showDisabled(value: boolean){
+        this.__showDisabled = value;
+    }
+
+    get showDisabled(): boolean{
+        return this.__showDisabled;
     }
 
     @Output() loaded: EventEmitter<any> = new EventEmitter<any>();
@@ -59,16 +70,23 @@ export class QuestionnairesComponent extends GenericComponent {
 
     private successLoad(data: any){
         this.questionnaires = data;
+        this.lastError = this.questionnaireService.lastError; 
+        this.loading = false;
+               
         this.loaded.emit(this.questionnaires);
     }
 
     private failureLoad(error: any){
         this.error = error;
+        this.loading = false;
+        
         let fake: any = [];
+        this.lastError = this.questionnaireService.lastError;        
         this.loaded.emit(fake);        
     }
 
     load(){ 
+        this.loading = true;
         this.questionnaireService.loadQuestionnaires(
             (data: any) => this.successLoad(data), 
             (error: any) => this.failureLoad(error), this.__filterType, this.showDisabled, this.searchTerm);
@@ -86,7 +104,7 @@ export class QuestionnairesComponent extends GenericComponent {
 
     filter(type: string = null, showDisabled: boolean = null){
         this.__filterType = type;
-        this.showDisabled = (showDisabled == null ? true : showDisabled);
+        this.__showDisabled = (showDisabled == null ? true : showDisabled);
         this.load();
         this.filtered.emit({"__filterType": this.__filterType, "showDisabled": this.showDisabled, "searchTerm": this.searchTerm});                
     }
@@ -105,6 +123,10 @@ export class QuestionnairesComponent extends GenericComponent {
         this.filter(this.__filterType, !this.showDisabled);
     }
 
+    toggleNoFilter(){
+        this.filter(null, null);
+    }
+
     delete(questionnaire: any){
         this.questionnaireService.deleteQuestionnaire(this.questionnaires, questionnaire);
     }
@@ -113,5 +135,14 @@ export class QuestionnairesComponent extends GenericComponent {
         // TODO
         this.imported.emit({});                
     }
+
+    public getFilterCaption() {
+        let caption = this.__filterType ? this.translate(this.__filterType): "";
+
+        if (this.__showDisabled) {
+            caption += (caption ? ", " : "") + this.translate("disabled shown");
+        }
+        return caption;
+    }     
 
 }

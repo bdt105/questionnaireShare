@@ -11,6 +11,7 @@ export class QuestionnaireComponent extends GenericComponent {
     public __questionnaire: any;
     private __id: any;
 
+    public lastError: string;
     public showSearch = false;
 
     @Input() questionnaires: any;
@@ -51,6 +52,7 @@ export class QuestionnaireComponent extends GenericComponent {
     }
 
     private successLoad(data: any) {
+        this.lastError = this.questionnaireService.lastError;        
         if (data && data._body) {
             this.__questionnaire = this.toolbox.parseJson(data._body);
             this.questionnaireService.cleanQuestionnaire(this.__questionnaire);
@@ -61,10 +63,14 @@ export class QuestionnaireComponent extends GenericComponent {
     }
 
     private failureLoad(error: any) {
+        this.lastError = this.questionnaireService.lastError;        
         this.error = error;
+        let fake: any ={};
+        this.loaded.emit(fake);        
     }
 
     load(id: string) {
+        this.lastError = null;
         this.questionnaireService.loadQuestionnaire(
             (data: any) => this.successLoad(data),
             (error: any) => this.failureLoad(error), id);
@@ -83,11 +89,13 @@ export class QuestionnaireComponent extends GenericComponent {
     }
 
     private successSave(data: any) {
+        this.lastError = this.questionnaireService.lastError;                
         this.saved.emit(data);
         console.log("success save", data);
     }
 
     private failureSave(error: any) {
+        this.lastError = this.questionnaireService.lastError;                
         this.saved.emit(error);
         console.log("failure save", error);
     }

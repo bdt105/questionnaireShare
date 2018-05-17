@@ -85,4 +85,8 @@ export class QuestionComponent extends GenericComponent {
         this.question.favorite = !this.question.favorite;
         this.change();
     }
+
+    checkQuestion() {
+        this.questionnaireService.checkQuestion(this.question, this.question.customAnswer, false);
+    }    
 }

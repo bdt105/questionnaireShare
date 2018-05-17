@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Toolbox } from 'bdt105toolbox/dist';
 import { Http } from '@angular/http';
-import { ConnexionTokenService } from 'bdt105angularconnexionservice';
 import { MiscellaneousService } from '@sharedServices/miscellaneous.service';
 
 @Injectable()
 export class QuestionnaireService {
 
+    private questionnairesLocalStorageKey = "questionnaires";
     private toolbox: Toolbox = new Toolbox();
 
     private data: any;
@@ -16,12 +16,33 @@ export class QuestionnaireService {
 
     private sortKey = "title";
 
-    constructor(private connexionTokenService: ConnexionTokenService, private http: Http, public miscellaneousService: MiscellaneousService) {
+    public lastError: string;
+
+    constructor(private http: Http, public miscellaneousService: MiscellaneousService) {
+    }
+
+    private saveToLocalStorage(questionnaire: any, forever: boolean = true) {
+        let qs = this.toolbox.readFromStorage(this.questionnairesLocalStorageKey);
+        if (!qs) {
+            qs = [];
+        }
+        if (questionnaire) {
+            qs.push(questionnaire);
+        }
+        this.toolbox.writeToStorage(this.questionnairesLocalStorageKey, qs, forever);
+    }
+
+    private loadFromLocalStorage() {
+        return this.toolbox.readFromStorage(this.questionnairesLocalStorageKey);
+    }
+
+    private cleanLocalStorage() {
+        this.toolbox.removeFromStorage(this.questionnairesLocalStorageKey);
     }
 
     loadFiles(callbackSuccess: Function, callbackFailure: Function) {
         let url = this.miscellaneousService.configuration().common.saveApiBaseUrl;
-        let user = this.connexionTokenService.getUser();
+        let user = this.miscellaneousService.getCurrentUser();
         let directory = user.email.toUpperCase();
         console.log("data url", url);
         let body = { "directory": directory };
@@ -33,7 +54,7 @@ export class QuestionnaireService {
 
     loadQuestionnaire(callbackSuccess: Function, callbackFailure: Function, id: string) {
         let url = this.miscellaneousService.configuration().common.saveApiBaseUrl;
-        let user = this.connexionTokenService.getUser();
+        let user = this.miscellaneousService.getCurrentUser();
         let directory = user.email.toUpperCase();
         console.log("data url", url);
         let body = { "directory": directory, "fileName": id + ".json" };
@@ -43,23 +64,32 @@ export class QuestionnaireService {
         );
     }
 
+    public filterQuestionnaires(questionnaires: any, type: string, showDisabled: boolean, searchTerm: string) {
+        if (questionnaires) {
+            if (type) {
+                questionnaires = this.toolbox.filterArrayOfObjects(questionnaires, "type", type, true, true, true, false);
+            }
+            if (searchTerm) {
+                questionnaires = this.toolbox.filterArrayOfObjects(questionnaires, "title", searchTerm, false, false, false, true);
+            }
+            if (showDisabled != null && !showDisabled) {
+                questionnaires = this.toolbox.extractFromArray(questionnaires, "disabled", showDisabled, true);
+            }
+            questionnaires = this.toolbox.sortArrayOfObjects(questionnaires, this.sortKey);
+        }
+        return questionnaires;
+    }
+
     private successLoadQuestionnaire(data: any, callbackSuccess: Function, fileName: string, type: string, showDisabled: boolean, searchTerm: string) {
         if (data) {
             let questionnaire = JSON.parse(data._body);
             questionnaire.fileName = fileName;
 
             this.data.push(questionnaire);
+            this.saveToLocalStorage(this.data);
+
             if (this.data.length == this.questionnairesCount) {
-                if (type) {
-                    this.data = this.toolbox.filterArrayOfObjects(this.data, "type", type, true, true, true, false);
-                }
-                if (searchTerm) {
-                    this.data = this.toolbox.filterArrayOfObjects(this.data, "title", searchTerm, false, false, false, true);
-                }
-                if (showDisabled != null && !showDisabled) {
-                    this.data = this.toolbox.extractFromArray(this.data, "disabled", showDisabled, true);
-                }
-                this.data = this.toolbox.sortArrayOfObjects(this.data, this.sortKey);
+                this.data = this.filterQuestionnaires(this.data, type, showDisabled, searchTerm);
                 callbackSuccess(this.data);
             }
         }
@@ -76,6 +106,7 @@ export class QuestionnaireService {
         if (data) {
             let questionnaireIds = JSON.parse(data._body);
             this.questionnairesCount = questionnaireIds.length;
+            this.cleanLocalStorage();
             for (var i = 0; i < questionnaireIds.length; i++) {
                 let id = questionnaireIds[i].replace(".json", "");
                 this.loadQuestionnaire(
@@ -86,22 +117,30 @@ export class QuestionnaireService {
         }
     }
 
-    private failureLoadQuestionnaires(error: any, callbackFailure: Function) {
+    private failureLoadQuestionnaires(error: any, callbackSuccess: Function, callbackFailure: Function, type: string, showDisabled: boolean, searchTerm: string) {
         console.log(error);
-        if (callbackFailure) {
-            callbackFailure(error);
+        let qs = this.loadFromLocalStorage();
+        if (qs) {
+            qs = this.filterQuestionnaires(qs, type, showDisabled, searchTerm);
+            this.lastError = "DATA_FROM_LOCAL";
+            callbackSuccess(qs);
+        } else {
+            this.lastError = "NO_DATA_FROM_LOCAL";
+            if (callbackFailure) {
+                callbackFailure(error);
+            }
         }
     }
-
 
     loadQuestionnaires(callbackSuccess: Function, callbackFailure: Function, type: string = null, showDisabled: boolean = null, searchTerm: string = null) {
         this.questionnairesCount = 0;
         this.loadCount = 0;
+        this.lastError = null;
         this.data = null;
         this.data = [];
         this.loadFiles(
             (data: any) => this.successLoadQuestionnaires(data, callbackSuccess, callbackFailure, type, showDisabled, searchTerm),
-            (error: any) => this.failureLoadQuestionnaires(error, callbackFailure)
+            (error: any) => this.failureLoadQuestionnaires(error, callbackSuccess, callbackFailure, type, showDisabled, searchTerm)
         );
     }
 
@@ -127,6 +166,7 @@ export class QuestionnaireService {
 
     newQuestion(questionnaire: any = null, index: number = 0) {
         let id = this.toolbox.getUniqueId();
+        let na = this.newAnswer();
         let q = {
             "id": (questionnaire ? questionnaire.id + "_" : "") + id,
             "questionLabel": "",
@@ -134,7 +174,7 @@ export class QuestionnaireService {
             "answerLabelNok": "",
             "question": "",
             "detail": "",
-            "answers": [],
+            "answers": [na],
             "point": 1,
             "edit": true,
             "showAnswers": true,
@@ -203,7 +243,7 @@ export class QuestionnaireService {
     deleteQuestionnaire(questionnaires: any, questionnaire: any) {
         if (questionnaire.fileName) {
             let url = this.miscellaneousService.configuration().common.saveApiBaseUrl;
-            let user = this.connexionTokenService.getUser();
+            let user = this.miscellaneousService.getCurrentUser();
             let directory = user.email.toUpperCase();
             console.log("data url", url);
             let options =
@@ -248,20 +288,34 @@ export class QuestionnaireService {
         }
     }
 
+    private successSave(data: any, callbackSuccess: Function){
+        this.lastError = null;
+        if (callbackSuccess){
+            callbackSuccess(data);
+        }
+    }
+
+    private failureSave(error: any, callbackFailure: Function){
+        this.lastError = "NO_DATA_SAVED";
+        if (callbackFailure){
+            callbackFailure(error);
+        }        
+    }
+
     saveQuestionnaire(callbackSuccess: Function, callbackFailure: Function, questionnaire: any) {
         if (questionnaire) {
             let q = this.toolbox.cloneObject(questionnaire);
             this.cleanQuestionnaire(q);
             let url = this.miscellaneousService.configuration().common.saveApiBaseUrl;
             console.log("data url", url);
-            let user = this.connexionTokenService.getUser();
+            let user = this.miscellaneousService.getCurrentUser();
             let directory = user.email.toUpperCase();
             let fileName = q.id + ".json";
             q.modificationDate = this.toolbox.dateToDbString(new Date());
             let body = { "directory": directory, "fileName": fileName, "content": JSON.stringify(q) };
             this.http.put(url, body).subscribe(
-                (data: any) => callbackSuccess(data),
-                (error: any) => callbackFailure(error)
+                (data: any) => this.successSave(data, callbackSuccess),
+                (error: any) => this.failureSave(error, callbackFailure)
             );
         }
     }
