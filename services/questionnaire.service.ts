@@ -147,7 +147,9 @@ export class QuestionnaireService {
     newQuestionnaire(type: string) {
         let id = this.toolbox.getUniqueId();
         let date = this.toolbox.dateToDbString(new Date());
+        let owner = this.miscellaneousService.getCurrentUser().email;
         let q = {
+            "owner": owner,
             "type": type,
             "modificationDate": date,
             "creationDate": date,
@@ -169,6 +171,7 @@ export class QuestionnaireService {
         let na = this.newAnswer();
         let q = {
             "id": (questionnaire ? questionnaire.id + "_" : "") + id,
+            "type": "text",
             "questionLabel": "",
             "answerLabelOk": "",
             "answerLabelNok": "",
@@ -177,6 +180,7 @@ export class QuestionnaireService {
             "answers": [na],
             "point": 1,
             "edit": true,
+            "editable": true,
             "showAnswers": true,
             "showDetail": true
         };
@@ -206,6 +210,7 @@ export class QuestionnaireService {
             "id": id,
             "answer": "",
             "detail": "",
+            "correct": true,
             "correctDistance": 0,
             "point": 1
         };
@@ -304,14 +309,13 @@ export class QuestionnaireService {
 
     saveQuestionnaire(callbackSuccess: Function, callbackFailure: Function, questionnaire: any) {
         if (questionnaire) {
+            questionnaire.modificationDate = this.toolbox.dateToDbString(new Date());
             let q = this.toolbox.cloneObject(questionnaire);
             this.cleanQuestionnaire(q);
             let url = this.miscellaneousService.configuration().common.saveApiBaseUrl;
-            console.log("data url", url);
             let user = this.miscellaneousService.getCurrentUser();
             let directory = user.email.toUpperCase();
             let fileName = q.id + ".json";
-            q.modificationDate = this.toolbox.dateToDbString(new Date());
             let body = { "directory": directory, "fileName": fileName, "content": JSON.stringify(q) };
             this.http.put(url, body).subscribe(
                 (data: any) => this.successSave(data, callbackSuccess),
@@ -350,7 +354,7 @@ export class QuestionnaireService {
             if (!question.correctDistance || question.correctDistance == 0) {
                 if (answer) {
                     if (this.toolbox.compareString(answer, question.answers[i].answer, false, false, exactMatching, false)) {
-                        question.status = true;
+                        question.status = question.answers[i].correct;
                         break;
                     }
                 }

@@ -25,7 +25,7 @@ export class QuestionComponent extends GenericComponent {
     }
 
     canEdit() {
-        return this.question.edit && this.editable;
+        return this.question && this.question.edit && this.editable;
     }
 
     toggleEdit() {
